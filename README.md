@@ -38,6 +38,10 @@ nzz n=5'484
 [, 3]	order (order headline appeared, makes it possible to link title and teaser)  
 [, 4]	text (full text, all in lowercase and punctuation marks removed)
 
+### Objective
+Can we predict the source of a title or teaser based on the chosen words?  
+We might want to try title or teaser separately, or a combination and compare the performances.
+
 ### Heads up
 Some headlines might be advertisement. We could detect those by looking at how often they were visible. We'd expect advertisement to appear more frequently compared to actual news headlines.  
 
