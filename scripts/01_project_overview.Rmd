@@ -61,10 +61,10 @@ Can we predict the source of a title or teaser based on the chosen words?
 We might want to try title or teaser separately, or a combination and compare the performances.
 
 ### Format
-[, 1]	date_time <dttm>  
-[, 2]	object <chr> ("title" or "teaser")  
-[, 3]	order <dbl> (order headline appeared, makes it possible to link title and teaser)  
-[, 4]	text <chr> (full text, all in lowercase and punctuation marks removed)  
+[, 1]	date_time \<dttm\> (UTC)  
+[, 2]	object \<chr\> ("title" or "teaser")  
+[, 3]	order \<dbl\> (order headline appeared, makes it possible to link title and teaser)  
+[, 4]	text \<chr\> (full text, all in lowercase and punctuation marks removed)  
 
 
 Following are the first few rows of the `headlines_nzz.csv` raw data:
