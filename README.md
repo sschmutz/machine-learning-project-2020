@@ -49,6 +49,6 @@ For the 20min dataset we have a teaser for almost every title, this is not the c
 
 
 ## Chosen Estimator
-*to be determined*
+Following the flow diagram below, we might want to try a Linear Support Vector Classification or Naive Bayes.  
 
 ![Choosing the right ML estimator - Cheatsheet](https://scikit-learn.org/stable/_static/ml_map.png)
