@@ -1,0 +1,115 @@
+---
+title: "Dataset and Objectives - Machine Learning Project 2020"
+subtitle: "Harry Chirayil, Christopher Keim, Stefan Schmutz"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(tidytext)
+library(knitr)
+library(here)
+```
+
+```{r read_datasets, message=FALSE, warning=FALSE}
+
+headlines_20min <-
+  read_csv(here("data", "headlines_20min.csv")) %>%
+  mutate(source = "20min")
+
+headlines_nzz <-
+  read_csv(here("data", "headlines_nzz.csv")) %>%
+  mutate(source = "nzz")
+
+# source: https://github.com/solariz/german_stopwords/blob/master/german_stopwords_plain.txt
+stop_words_german <-
+  read_csv(here("data", "stop_words_german.txt"), col_names = c("word"))
+
+# Combine the two datasets
+headlines <-
+  bind_rows(headlines_20min, headlines_nzz)
+
+# remove replicates and split text in order to have one word per line
+headlines_tidy <-
+  headlines %>%
+  distinct(object, text, source) %>%
+  unnest_tokens(word, text)
+
+```
+
+
+## Dataset
+The dataset includes **news headlines** (title and teaser) from two online news sites [20min.ch](https://www.20min.ch/) and [nzz.ch](https://www.nzz.ch/).
+
+### Data collection
+All titles and teasers (if available) from the titlepage were collected twice a day (6am and 6pm local time) between 2019-02-04 and 2020-01-21.  
+While the amount of unique titles are comparable between the two sources, there were more teasers available from the 20min titlepage (see Table \ref{tab:dataset-statistics}).
+
+```{r dataset-statistics, message=FALSE}
+headlines %>%
+  group_by(source, object) %>%
+  summarise(n_unique = length(unique(text))) %>%
+  arrange(desc(object)) %>%
+  knitr::kable(caption = "\\label{tab:dataset-statistics}Sample size per class",
+               format.args = list(big.mark = "'", scientific = FALSE))
+```
+
+### Objective
+Can we predict the source of a title or teaser based on the chosen words?  
+We might want to try title or teaser separately, or a combination and compare the performances.
+
+### Format
+[, 1]	date_time <dttm>  
+[, 2]	object <chr> ("title" or "teaser")  
+[, 3]	order <dbl> (order headline appeared, makes it possible to link title and teaser)  
+[, 4]	text <chr> (full text, all in lowercase and punctuation marks removed)  
+
+
+Following are the first few rows of the `headlines_nzz.csv` raw data:
+
+```{r dataset-structure}
+headlines_nzz %>%
+  select(-source) %>%
+  print(n = 5)
+```
+
+### Data visualisation
+
+```{r frequent-words, fig.cap="\\label{fig:frequent-words}10 most frequent words in title and teaser per source (not including stop words)", out.width = "60%", fig.align = "center"}
+
+top_n <- 10
+
+headlines_tidy %>%
+  anti_join(stop_words_german, by = "word") %>%
+  group_by(source) %>%
+  count(word, sort = TRUE) %>%
+  slice_max(order_by = n, n = top_n) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  facet_grid(. ~ source) +
+  labs(y = NULL)
+
+```
+
+To gain some insights, basic data visualisation was done on the dataset where replicates (stories occuring multiple times) were only kept once.  
+Figure \ref{fig:frequent-words} compares the `r top_n` most frequently used words from the two sources. Stop words, words that are very common and typically not very useful for classification were removed (source: [github.com/solariz/german_stopwords/german_stopwords_plain.txt](https://github.com/solariz/german_stopwords/blob/master/german_stopwords_plain.txt)).  
+Within those 10 most occuring words per source, only three are shared (schweizer, schweiz, neue). This could hint that it's possible to classify headlines based on the words used.
+
+
+
+
+### Heads up
+Some headlines might be advertisement. We could detect those by looking at how often they were visible. We'd expect advertisement to appear more frequently compared to actual news headlines.  
+
+For the 20min dataset we have a teaser for almost every title, this is not the case for the nzz dataset where very often we only have a title without teaser.
+
+
+## Chosen Estimator
+Following the flow diagram below (see Figure \ref{fig:ml-map}), we might want to try a Linear Support Vector Classification or Naive Bayes.  
+
+```{r ml-map, fig.cap="Choosing the right ML estimator, source: scikit-learn.org", echo=FALSE, out.width="400px", fig.align="center"}
+knitr::include_graphics(here("figures", "ml_map.png"))
+```
