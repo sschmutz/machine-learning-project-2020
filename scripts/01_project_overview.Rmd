@@ -77,27 +77,56 @@ headlines_nzz %>%
 
 ### Data visualisation
 
-```{r frequent-words, fig.cap="\\label{fig:frequent-words}10 most frequent words in title and teaser per source (not including stop words)", out.width = "60%", fig.align = "center"}
+```{r frequent-words, fig.cap="\\label{fig:frequent-words}10 most frequent words in title and teaser per source (not including stop words)", out.width = "70%", fig.align = "center"}
 
 top_n <- 10
 
 headlines_tidy %>%
   anti_join(stop_words_german, by = "word") %>%
-  group_by(source) %>%
+  group_by(source) %>% # alternatively also by object
   count(word, sort = TRUE) %>%
   slice_max(order_by = n, n = top_n) %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(n, word)) +
   geom_col() +
   facet_grid(. ~ source) +
+  theme_bw() +
   labs(y = NULL)
 
 ```
 
-To gain some insights, basic data visualisation was done on the dataset where replicates (stories occuring multiple times) were only kept once.  
+To gain some insights, basic data visualisation was done on the dataset where replicates (stories listed multiple times) were only kept once.  
 Figure \ref{fig:frequent-words} compares the `r top_n` most frequently used words from the two sources. Stop words, words that are very common and typically not very useful for classification were removed (source: [github.com/solariz/german_stopwords/german_stopwords_plain.txt](https://github.com/solariz/german_stopwords/blob/master/german_stopwords_plain.txt)).  
-Within those 10 most occuring words per source, only three are shared (schweizer, schweiz, neue). This could hint that it's possible to classify headlines based on the words used.
+Within those 10 most occuring words per source, only three are shared (schweizer, schweiz, neue). This could hint that it's possible to classify headlines based on the words used.  
+A more detailed comparison of word frequencies from those two sources can be seen in Figure \ref{fig:word-frequencies}.
 
+
+```{r word-frequencies, fig.cap="\\label{fig:frequent-words}Word frequencies in title and teaser per source (not including stop words)", out.width = "80%", fig.align = "center"}
+
+word_frequencies <-
+  headlines_tidy %>%
+  anti_join(stop_words_german, by = "word") %>%
+  count(source, word) %>%
+  group_by(source) %>% # alternatively also by object
+  mutate(proportion = n / sum(n)) %>%
+  select(-n) %>%
+  pivot_wider(names_from = source, values_from = proportion, values_fill = 0) %>%
+  mutate(proportion_differences = abs(nzz-`20min`))
+
+word_frequencies %>%
+  filter(`20min` != 0,
+         nzz != 0) %>%
+  ggplot(aes(x = `20min`, y = nzz, color = proportion_differences)) +
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = scales::percent_format()) +
+  scale_y_log10(labels = scales::percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), 
+                       low = "darkslategray4", high = "gray75") +
+  theme_bw() +
+  theme(legend.position = "none")
+```
 
 
 
