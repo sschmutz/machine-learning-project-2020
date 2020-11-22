@@ -176,3 +176,60 @@ test_predictions %$%
 
 test_predictions_wo_stop %$%
   confusionMatrix(as_factor(source_predicted), as_factor(source))
+
+
+# analyze misclassified headlines -----------------------------------------
+library(ggbeeswarm)
+
+test_predictions %>%
+  filter(source_predicted != source) %>%
+  select(text, source, source_predicted, prob_20min, prob_nzz) %>%
+  pivot_longer(cols = starts_with("prob"), names_to = "prob_source", values_to = "prob") %>%
+  ggplot(aes(x = source, y = prob, col = prob_source)) +
+  geom_quasirandom()
+
+test_predictions_wo_stop %>%
+  filter(source_predicted != source) %>%
+  select(text, source, source_predicted, prob_20min, prob_nzz) %>%
+  pivot_longer(cols = starts_with("prob"), names_to = "prob_source", values_to = "prob") %>%
+  ggplot(aes(x = source, y = prob, col = prob_source)) +
+  geom_quasirandom()
+
+
+
+test_predictions %>%
+  pivot_longer(cols = starts_with("prob"), names_to = "prob_source", values_to = "prob") %>%
+  ggplot(aes(x = prob, color = prob_source)) +
+  geom_freqpoly()
+
+test_predictions_wo_stop %>%
+  pivot_longer(cols = starts_with("prob"), names_to = "prob_source", values_to = "prob") %>%
+  ggplot(aes(x = prob, color = prob_source)) +
+  geom_freqpoly()
+
+
+
+test_predictions %>%
+  filter(source_predicted != source,
+         source_predicted == "nzz") %>%
+  pull(prob_nzz) %>%
+  mean()
+
+test_predictions %>%
+  filter(source_predicted != source,
+         source_predicted == "20min") %>%
+  pull(prob_20min) %>%
+  mean()
+
+
+test_predictions_wo_stop %>%
+  filter(source_predicted != source,
+         source_predicted == "nzz") %>%
+  pull(prob_nzz) %>%
+  mean()
+
+test_predictions_wo_stop %>%
+  filter(source_predicted != source,
+         source_predicted == "20min") %>%
+  pull(prob_20min) %>%
+  mean()
