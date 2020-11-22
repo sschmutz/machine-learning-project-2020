@@ -1,6 +1,7 @@
 library(tidyverse)
 library(tidytext)
 library(caret)
+library(magrittr)
 library(here)
 
 
@@ -18,29 +19,12 @@ headlines_nzz <-
 stop_words_german <-
   read_csv(here("data", "stop_words_german.txt"), col_names = c("word"))
 
-# Combine the two datasets
+# Combine the two datasets and only keep unique headlines
 headlines <-
   bind_rows(headlines_20min, headlines_nzz) %>%
+  distinct(text, source) %>%
   mutate(headlines_id = 1:n())
 
-# remove replicates and split text in order to have one word per line
-headlines_tidy <-
-  headlines %>%
-  distinct(object, text, source) %>%
-  unnest_tokens(word, text) 
-
-# create vocabulary
-vocabulary <-
-  headlines_tidy %>%
-  count(word, sort = TRUE) %>%
-  mutate(vocabulary_id = 1:n())
-
-vocabulary_without_stop_words <-
-  headlines_tidy %>%
-  anti_join(stop_words_german, by = "word") %>%
-  count(word, sort = TRUE) %>%
-  mutate(vocabulary_id = 1:n())
-  
 
 # split training and test data --------------------------------------------
 
@@ -68,9 +52,6 @@ prior_prob_nzz <-
   filter(source == "nzz") %>%
   nrow() / nrow(train)
 
-# because we only have two classes, those two probabilities have to sum to 1
-prior_prob_20min + prior_prob_nzz
-
 
 # calculate class conditional probabilities -------------------------------
 
@@ -79,47 +60,72 @@ cond_prob_20min <-
   filter(source == "20min") %>%
   select(text) %>%
   unnest_tokens(word, text) %>%
-  # add 1 instance of each word from vocabulary to avoid probability of 0
-  # when a word not present in training set appears
-  bind_rows(select(vocabulary, word)) %>%
   count(word) %>%
   mutate(prob = n/sum(n))
+
+cond_prob_20min_wo_stop <-
+  train %>%
+  filter(source == "20min") %>%
+  select(text) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words_german, by = "word") %>%
+  count(word) %>%
+  mutate(prob = n/sum(n))
+
 
 cond_prob_nzz <-
   train %>%
   filter(source == "nzz") %>%
   select(text) %>%
   unnest_tokens(word, text) %>%
-  # add 1 instance of each word from vocabulary to avoid probability of 0
-  # when a word not present in training set appears
-  bind_rows(select(vocabulary, word)) %>%
+  count(word) %>%
+  mutate(prob = n/sum(n))
+
+cond_prob_nzz_wo_stop <-
+  train %>%
+  filter(source == "nzz") %>%
+  select(text) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words_german, by = "word") %>%
   count(word) %>%
   mutate(prob = n/sum(n))
 
 
 # calculate scores for example headline -----------------------------------
 
+# just an example for a single headline
 headline <- tibble(text = "Grosse Rettungsaktion, weil sich mehrere Personen verirrt haben")
+# headline <- tibble(text = "Erpressungsversuch gegen Alain Berset: Es geht die Schweiz nichts an, ob der Bundesrat eine Affäre hatte oder nicht. Es zählt eine andere Frage")
 
 headline_tidy <-
   headline %>%
   unnest_tokens(word, text)
 
 # create score of headline for each class
+# replace NA in column prob after left_join by 1/sum(n words in training) in order
+# to account for a word which was not present in the training set of this class
 score_20min <-
   headline_tidy %>%
   left_join(cond_prob_20min, by = "word") %>%
+  mutate(prob = replace_na(prob, 1/sum(cond_prob_20min$n))) %>%
   pull(prob) %>%
   prod() * prior_prob_20min
 
 score_nzz <-
   headline_tidy %>%
   left_join(cond_prob_nzz, by = "word") %>%
+  mutate(prob = replace_na(prob, 1/sum(cond_prob_nzz$n))) %>%
   pull(prob) %>%
   prod() * prior_prob_nzz
 
-# compare scores to determine the larger (=predicted class)
-score_20min > score_nzz
+prob_20min <-
+  score_20min/(score_20min+score_nzz)
+
+prob_nzz <-
+  score_nzz/(score_20min+score_nzz)
+
+# compare probabilities to determine the larger (=predicted class)
+prob_20min > prob_nzz
 
 
 # predict class of test data ----------------------------------------------
@@ -129,20 +135,44 @@ test_predictions <-
   select(headlines_id, text, source) %>%
   unnest_tokens(word, text) %>%
   left_join(cond_prob_20min, by = "word") %>%
-  rename(prob_20min = prob) %>%
+  mutate(prob = replace_na(prob, 1/sum(cond_prob_20min$n))) %>%
+  rename(prob_word_20min = prob) %>%
   left_join(cond_prob_nzz, by = "word") %>%
-  rename(prob_nzz = prob) %>%
+  mutate(prob = replace_na(prob, 1/sum(cond_prob_nzz$n))) %>%
+  rename(prob_word_nzz = prob) %>%
   group_by(headlines_id) %>%
-  summarise(score_20min = prod(prob_20min) * prior_prob_20min,
-            score_nzz = prod(prob_nzz) * prior_prob_nzz) %>%
-  mutate(source_predicted = if_else(score_20min > score_nzz, true = "20min", false = "nzz"))
+  summarise(score_20min = prod(prob_word_20min) * prior_prob_20min,
+            score_nzz = prod(prob_word_nzz) * prior_prob_nzz) %>%
+  mutate(prob_20min = score_20min/(score_20min+score_nzz),
+         prob_nzz = score_nzz/(score_20min+score_nzz)) %>%
+  mutate(source_predicted = if_else(prob_20min > prob_nzz, true = "20min", false = "nzz")) %>%
+  left_join(test, by = "headlines_id")
+
+
+test_predictions_wo_stop <-
+  test %>%
+  select(headlines_id, text, source) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words_german, by = "word") %>%
+  left_join(cond_prob_20min_wo_stop, by = "word") %>%
+  mutate(prob = replace_na(prob, 1/sum(cond_prob_20min_wo_stop$n))) %>%
+  rename(prob_word_20min = prob) %>%
+  left_join(cond_prob_nzz_wo_stop, by = "word") %>%
+  mutate(prob = replace_na(prob, 1/sum(cond_prob_nzz_wo_stop$n))) %>%
+  rename(prob_word_nzz = prob) %>%
+  group_by(headlines_id) %>%
+  summarise(score_20min = prod(prob_word_20min) * prior_prob_20min,
+            score_nzz = prod(prob_word_nzz) * prior_prob_nzz) %>%
+  mutate(prob_20min = score_20min/(score_20min+score_nzz),
+         prob_nzz = score_nzz/(score_20min+score_nzz)) %>%
+  mutate(source_predicted = if_else(score_20min > score_nzz, true = "20min", false = "nzz")) %>%
+  left_join(test, by = "headlines_id")
 
 
 # compare label and prediction of test data -------------------------------
 
-test_label <- as_factor(test$source)
-test_prediction <- as_factor(test_predictions$source_predicted)
+test_predictions %$%
+  confusionMatrix(as_factor(source_predicted), as_factor(source))
 
-confusionMatrix(test_prediction, test_label)
-
-accuracy <- mean(test_label == test_prediction)
+test_predictions_wo_stop %$%
+  confusionMatrix(as_factor(source_predicted), as_factor(source))
