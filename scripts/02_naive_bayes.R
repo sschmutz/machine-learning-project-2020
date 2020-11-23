@@ -107,14 +107,14 @@ headline_tidy <-
 score_20min <-
   headline_tidy %>%
   left_join(cond_prob_20min, by = "word") %>%
-  mutate(prob = replace_na(prob, 1/sum(cond_prob_20min$n))) %>%
+  mutate(prob = replace_na(prob, 1/(sum(cond_prob_20min$n)+sum(cond_prob_nzz$n)))) %>%
   pull(prob) %>%
   prod() * prior_prob_20min
 
 score_nzz <-
   headline_tidy %>%
   left_join(cond_prob_nzz, by = "word") %>%
-  mutate(prob = replace_na(prob, 1/sum(cond_prob_nzz$n))) %>%
+  mutate(prob = replace_na(prob, 1/(sum(cond_prob_20min$n)+sum(cond_prob_nzz$n)))) %>%
   pull(prob) %>%
   prod() * prior_prob_nzz
 
@@ -135,10 +135,10 @@ test_predictions <-
   select(headlines_id, text, source) %>%
   unnest_tokens(word, text) %>%
   left_join(cond_prob_20min, by = "word") %>%
-  mutate(prob = replace_na(prob, 1/sum(cond_prob_20min$n))) %>%
+  mutate(prob = replace_na(prob, 1/(sum(cond_prob_20min$n)+sum(cond_prob_nzz$n)))) %>%
   rename(prob_word_20min = prob) %>%
   left_join(cond_prob_nzz, by = "word") %>%
-  mutate(prob = replace_na(prob, 1/sum(cond_prob_nzz$n))) %>%
+  mutate(prob = replace_na(prob, 1/(sum(cond_prob_20min$n)+sum(cond_prob_nzz$n)))) %>%
   rename(prob_word_nzz = prob) %>%
   group_by(headlines_id) %>%
   summarise(score_20min = prod(prob_word_20min) * prior_prob_20min,
@@ -155,10 +155,10 @@ test_predictions_wo_stop <-
   unnest_tokens(word, text) %>%
   anti_join(stop_words_german, by = "word") %>%
   left_join(cond_prob_20min_wo_stop, by = "word") %>%
-  mutate(prob = replace_na(prob, 1/sum(cond_prob_20min_wo_stop$n))) %>%
+  mutate(prob = replace_na(prob, 1/(sum(cond_prob_20min_wo_stop$n)+sum(cond_prob_nzz_wo_stop$n)))) %>%
   rename(prob_word_20min = prob) %>%
   left_join(cond_prob_nzz_wo_stop, by = "word") %>%
-  mutate(prob = replace_na(prob, 1/sum(cond_prob_nzz_wo_stop$n))) %>%
+  mutate(prob = replace_na(prob, 1/(sum(cond_prob_20min_wo_stop$n)+sum(cond_prob_nzz_wo_stop$n)))) %>%
   rename(prob_word_nzz = prob) %>%
   group_by(headlines_id) %>%
   summarise(score_20min = prod(prob_word_20min) * prior_prob_20min,
