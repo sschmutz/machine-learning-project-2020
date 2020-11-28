@@ -32,12 +32,14 @@ stop_words_german <-
 
 # Combine the two datasets
 headlines <-
-  bind_rows(headlines_20min, headlines_nzz)
+  bind_rows(headlines_20min, headlines_nzz) %>%
+  mutate(source = factor(source, levels = c("nzz", "20min")),
+         object = factor(str_to_title(object), levels = c("Title", "Teaser"))) 
 
 # remove replicates and split text in order to have one word per line
 headlines_tidy <-
   headlines %>%
-  distinct(object, text, source) %>%
+  distinct(object, text, source, .keep_all = TRUE) %>%
   unnest_tokens(word, text)
 
 ```
@@ -71,10 +73,13 @@ All titles and teasers (if available) from the titlepage were collected twice a 
 While the amount of unique titles are comparable between the two sources, there were more teasers available from the 20min titlepage (see Table \ref{tab:dataset-statistics}).
 
 ```{r dataset-statistics, message=FALSE}
-headlines %>%
+n_unique <-
+  headlines %>%
   group_by(source, object) %>%
   summarise(n_unique = length(unique(text))) %>%
-  arrange(desc(object)) %>%
+  arrange(object, source)
+
+n_unique %>%
   knitr::kable(caption = "\\label{tab:dataset-statistics}Sample size per class",
                format.args = list(big.mark = "'", scientific = FALSE))
 ```
@@ -87,8 +92,49 @@ We might want to try title or teaser separately, or a combination and compare th
 
 ### Data visualisation
 To gain some insights, basic data visualisation was done on the dataset where replicates (stories listed multiple times) were only kept once.  
+Figure \ref{fig:headline-length} shows the headline length (words) distributions within the different categories. It can be seen that nzz headlines are typically a bit longer and with a larger spread compared to 20min headlines.  
 Figure \ref{fig:word-frequencies} compares the word frequencies from the two sources. Stop words, words that are very common and typically not very useful for classification were removed (source: [github.com/solariz/german_stopwords](https://github.com/solariz/german_stopwords/blob/master/german_stopwords_plain.txt)).  
 It's visible that many of the most frequently used words occur at different rates in headlines of the two news-sites. This could hint that it's possible to classify headlines based on the words used.
+
+```{r headline-length, fig.cap="\\label{fig:headline-length}Length distribution of headlines in words. Dotted lines represent means per group.", out.width = "90%", fig.align = "center", message=FALSE, warning=FALSE}
+
+headlines_word_length <-
+  headlines_tidy %>%
+  group_by(date_time, object, order, source) %>%
+  summarise(total_words = n()) %>%
+  ungroup()
+
+headlines_word_length_mean <-
+  headlines_word_length %>%
+  group_by(object, source) %>%
+  summarise(mean_words = mean(total_words)) %>%
+  ungroup()
+
+n_unique <-
+  n_unique %>%
+  mutate(x_pos = if_else(object == "Title", 25, 50))
+
+headlines_word_length %>%
+  ggplot(aes(total_words, fill = source)) +
+  geom_histogram(aes(y=..density..), bins = 35, alpha = 0.9) +
+  geom_vline(data = headlines_word_length_mean, aes(xintercept = mean_words), color = "grey70", linetype = "dashed", size = 0.5) +
+  facet_grid(source ~ object, scales = "free_x") +
+  scale_fill_manual(values = c("#A40E4C", "#0d2880")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), breaks = seq(0, 0.3, by = 0.1)) +
+  geom_text(y = 0.22, aes(label = paste0("n = ", format(n_unique, big.mark = "'")), x = x_pos), data = n_unique, color = "grey70", size = 3) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        plot.title.position = "plot",
+        plot.title = element_markdown(),
+        plot.subtitle = element_markdown()) +
+  labs(x = "Number of words",
+       y = NULL, 
+       title = "**Headline length distribution**",
+       subtitle = "amount of words in <span style='color:#A40E4C'>**nzz**</span> and <span style='color:#0d2880'>**20min**</span> headlines")
+
+```
+
 
 
 ```{r word-frequencies, fig.cap="\\label{fig:frequent-words}Word frequencies in title and teaser per source (not including stop words)", out.width = "90%", fig.align = "center", warning=FALSE}
