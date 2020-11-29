@@ -3,7 +3,7 @@
 
 ## Tasks and deadlines
 - [x] Team choice: 13 November 2020
-- [ ] Dataset choice: 25 November 2020
+- [x] Dataset choice: 25 November 2020
 - [ ] Presentation: 16 December 2020
 - [ ] Written report and `MATLAB` code: before 18 January 2021
 
@@ -49,6 +49,6 @@ For the 20min dataset we have a teaser for almost every title, this is not the c
 
 
 ## Chosen Estimator
-Following the flow diagram below, we might want to try a Linear Support Vector Classification or Naive Bayes.  
+Following the flow diagram below, we might want to try Naive Bayes or also additionally a Linear Support Vector Classification.  
 
 ![Choosing the right ML estimator - Cheatsheet](https://scikit-learn.org/stable/_static/ml_map.png)
