@@ -4,6 +4,11 @@ num_test_headlines = 21827;
 num_vocabulary_words = 44108;
 
 test_features = dlmread('data/test_features.csv', ',', 1, 0);
+stop_words = readtable('data/vocabulary_stop_words.csv');
+
+
+% remove stop_words
+test_features = test_features(~ismember(test_features(:,2), stop_words{:,"word_id"}),:);
 
 % select maximum num_test_headlines with a maximum vocabulary size
 % of num_vocabulary_words

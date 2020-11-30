@@ -4,6 +4,11 @@ num_train_headlines = 65482;
 num_vocabulary_words = 44108;
 
 train_features = dlmread('data/train_features.csv', ',', 1, 0);
+stop_words = readtable('data/vocabulary_stop_words.csv');
+
+
+% remove stop_words
+train_features = train_features(~ismember(train_features(:,2), stop_words{:,"word_id"}),:);
 
 % select maximum num_train_headlines with a maximum vocabulary size
 % of num_vocabulary_words
