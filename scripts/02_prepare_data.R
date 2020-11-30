@@ -55,7 +55,6 @@ set.seed(20201122)
 train <-
   headlines %>%
   sample_frac(train_fraction) %>%
-  arrange(headline_id) %>%
   rowid_to_column("train_id") 
 
 train_labels <-
@@ -74,7 +73,7 @@ train_features <-
 test  <- 
   headlines %>%
   anti_join(train, by = "headline_id") %>%
-  arrange(headline_id) %>%
+  sample_frac(1L) %>%
   rowid_to_column("test_id") 
 
 test_labels <-
