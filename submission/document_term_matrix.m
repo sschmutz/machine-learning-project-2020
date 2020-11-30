@@ -28,10 +28,10 @@ function [DTM, labels_20min] = document_term_matrix (features_path, labels_path,
 % ----------------------------------------------------------------------- %
 % Example of usage: 
 %   [DTM_train, train_labels_20min] = ...
-%    document_term_matrix ('data/train_features.csv', 'data/train_labels.csv', 65482, 44108, false)
+%       document_term_matrix ('data/train_features.csv', 'data/train_labels.csv', 65482, 44108, false)
 %
 %   [DTM_test, test_labels_20min] = ...
-%    document_term_matrix ('data/test_features.csv', 'data/test_labels.csv', 21827, 44108, false)
+%       document_term_matrix ('data/test_features.csv', 'data/test_labels.csv', 21827, 44108, false)
 %
 %% reading train features (train/test_id, word_id, word_count)
 
