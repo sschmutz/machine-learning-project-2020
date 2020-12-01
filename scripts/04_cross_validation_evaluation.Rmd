@@ -1,0 +1,109 @@
+---
+title: "Evaluate Cross Validation Results - Machine Learning Project 2020"
+subtitle: "Harry Chirayil, Christopher Keim, Stefan Schmutz"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(here)
+library(scales)
+library(ggrepel)
+library(ggtext)
+library(patchwork)
+```
+
+```{r read_results, message=FALSE, warning=FALSE}
+
+cv_accuracies <-
+  read_csv(here("submission", "results", "cross_validation_accuracies_grid.csv")) %>%
+  mutate(set_type = if_else(set_type == "test", "evaluate", set_type))
+
+```
+
+```{r heatmap}
+
+grid_cv <-
+  cv_accuracies %>%
+  mutate(exclude_stop_words = if_else(exclude_stop_words, "stop words removed", "stop words included"),
+         train_headlines = round(train_headlines, digits = -2),
+         train_vocabulary = round(train_vocabulary, digits = -2)) %>%
+  ggplot(aes(x = factor(train_headlines), y = factor(train_vocabulary))) +
+  geom_tile(aes(fill = accuracy)) +
+  facet_grid(set_type ~ exclude_stop_words) +
+  scale_fill_gradient(labels = scales::percent_format(accuracy = 1), limits = c(0.5, 1), breaks = c(0.5,0.75,1), low = "#132B43",
+  high = "#8CFF98") +
+  theme_minimal() +
+  theme(plot.title.position = "plot",
+        plot.title = element_markdown(),
+        legend.position = "bottom",
+        legend.justification = "right") +
+  labs(x = "\nNumber of Headlines",
+       y = "Words in Vocabulary\n",
+       fill = NULL,
+       title = "**10-Fold Cross Validation Accuracy**")
+
+ggsave(here("figures", "cv_accuracies_grid.png"), grid_cv, width = 8, height = 6)
+
+
+```
+
+
+```{r plot_results}
+
+A <-
+  cv_accuracies %>%
+  mutate(headline = "Number of Headlines") %>%
+  filter(train_vocabulary == max(train_vocabulary)) %>%
+  ggplot(aes(x = train_headlines, y = accuracy)) +
+  geom_line(aes(col = set_type, linetype = exclude_stop_words), size = 1) +
+  geom_label(x = 40000, y = 0.88, label = "Training", label.padding = unit(0.3, "lines"), fill = "#CC978E", color = "white") +
+  geom_label(x = 40000, y = 0.79, label = "Validation", label.padding = unit(0.3, "lines"), fill = "#568EA3", color = "white") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0.6, 1)) +
+  scale_color_manual(values = c("#568EA3", "#CC978E")) +
+  scale_linetype_manual(values = c("solid", "longdash")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line.x = element_line(size = 0.5, colour = "grey50"),
+        axis.line.y = element_line(size = 0.5, colour = "grey50"),
+        plot.title.position = "plot",
+        plot.title = element_markdown(),
+        plot.subtitle = element_markdown()) +
+  facet_grid(. ~ headline) +
+  labs(x = NULL,
+       y = NULL, 
+       title = "**10-Fold Cross Validation Accuracy**",
+       subtitle = "with **stop words removed** (dashed line) and **included** (solid line)")
+
+B <-
+  cv_accuracies %>%
+  mutate(headline = "Words in Vocabulary") %>%
+  filter(train_headlines == max(train_headlines)) %>%
+  ggplot(aes(x = train_vocabulary, y = accuracy)) +
+  geom_line(aes(col = set_type, linetype = exclude_stop_words), size = 1) +
+  geom_label(x = 25000, y = 0.84, label = "Training", label.padding = unit(0.3, "lines"), fill = "#CC978E", color = "white") +
+  geom_label(x = 25000, y = 0.79, label = "Validation", label.padding = unit(0.3, "lines"), fill = "#568EA3", color = "white") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0.6, 1)) +
+  scale_color_manual(values = c("#568EA3", "#CC978E")) +
+  scale_linetype_manual(values = c("solid", "longdash")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line.x = element_line(size = 0.5, colour = "grey50"),
+        axis.text.y = element_blank(),
+        plot.title.position = "plot",
+        plot.title = element_markdown(),
+        plot.subtitle = element_markdown(),
+        axis.title.y = element_text(angle=0)) +
+  facet_grid(. ~ headline) +
+  labs(x = NULL,
+       y = NULL)
+
+ggsave(here("figures", "cv_accuracies.png"), A+B, width = 7, height = 4)
+```
+
