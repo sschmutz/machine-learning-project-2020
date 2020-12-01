@@ -13,6 +13,10 @@ library(scales)
 library(ggrepel)
 library(ggtext)
 library(patchwork)
+
+update_geom_defaults("text", list(family = "Source Sans Pro", size = 6))
+update_geom_defaults("label", list(family = "Source Sans Pro", size = 6))
+update_geom_defaults("label_repel", list(family = "Source Sans Pro", size = 6))
 ```
 
 ```{r read_results, message=FALSE, warning=FALSE}
@@ -35,7 +39,8 @@ grid_cv <-
   facet_grid(set_type ~ exclude_stop_words) +
   scale_fill_gradient(labels = scales::percent_format(accuracy = 1), limits = c(0.5, 1), breaks = c(0.5,0.75,1), low = "#132B43",
   high = "#8CFF98") +
-  theme_minimal() +
+  theme_minimal(base_family = "Source Sans Pro",
+                base_size = 16) +
   theme(plot.title.position = "plot",
         plot.title = element_markdown(),
         legend.position = "bottom",
@@ -45,8 +50,8 @@ grid_cv <-
        fill = NULL,
        title = "**10-Fold Cross Validation Accuracy**")
 
-ggsave(here("figures", "cv_accuracies_grid.png"), grid_cv, width = 8, height = 6)
-
+ggsave(here("figures", "cv_accuracies_grid.png"), grid_cv, width = 10, height = 7)
+grid_cv
 
 ```
 
@@ -64,7 +69,8 @@ A <-
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0.6, 1)) +
   scale_color_manual(values = c("#568EA3", "#CC978E")) +
   scale_linetype_manual(values = c("solid", "longdash")) +
-  theme_minimal() +
+  theme_minimal(base_family = "Source Sans Pro",
+                base_size = 16) +
   theme(legend.position = "none",
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
@@ -90,7 +96,8 @@ B <-
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0.6, 1)) +
   scale_color_manual(values = c("#568EA3", "#CC978E")) +
   scale_linetype_manual(values = c("solid", "longdash")) +
-  theme_minimal() +
+  theme_minimal(base_family = "Source Sans Pro",
+                base_size = 16) +
   theme(legend.position = "none",
         panel.grid.minor = element_blank(),
         panel.grid.major = element_blank(),
@@ -104,6 +111,6 @@ B <-
   labs(x = NULL,
        y = NULL)
 
-ggsave(here("figures", "cv_accuracies.png"), A+B, width = 7, height = 4)
+ggsave(here("figures", "cv_accuracies.png"), A+B, width = 10, height = 6)
 ```
 

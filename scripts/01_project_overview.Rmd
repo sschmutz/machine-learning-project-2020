@@ -14,6 +14,10 @@ library(tidytext)
 library(scales)
 library(knitr)
 library(here)
+
+update_geom_defaults("text", list(family = "Source Sans Pro", size = 6))
+update_geom_defaults("label", list(family = "Source Sans Pro", size = 6))
+update_geom_defaults("label_repel", list(family = "Source Sans Pro", size = 6))
 ```
 
 ```{r read_datasets, message=FALSE, warning=FALSE}
@@ -114,15 +118,19 @@ n_unique <-
   n_unique %>%
   mutate(x_pos = if_else(object == "Title", 25, 50))
 
-headlines_word_length %>%
+
+
+headline_length_dist <-
+  headlines_word_length %>%
   ggplot(aes(total_words, fill = source)) +
   geom_histogram(aes(y=..density..), bins = 35, alpha = 0.9) +
   geom_vline(data = headlines_word_length_mean, aes(xintercept = mean_words), color = "grey70", linetype = "dashed", size = 0.5) +
   facet_grid(source ~ object, scales = "free_x") +
   scale_fill_manual(values = c("#A40E4C", "#0d2880")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), breaks = seq(0, 0.3, by = 0.1)) +
-  geom_text(y = 0.22, aes(label = paste0("n = ", format(n_unique, big.mark = "'")), x = x_pos), data = n_unique, color = "grey70", size = 3) +
-  theme_minimal() +
+  geom_text(y = 0.22, aes(label = paste0("n = ", format(n_unique, big.mark = "'")), x = x_pos), data = n_unique, color = "grey60", size = 5) +
+  theme_minimal(base_family = "Source Sans Pro",
+                base_size = 16) +
   theme(legend.position = "none",
         panel.grid.minor = element_blank(),
         plot.title.position = "plot",
@@ -133,6 +141,9 @@ headlines_word_length %>%
        title = "**Headline length distribution**",
        subtitle = "amount of words in <span style='color:#A40E4C'>**nzz**</span> and <span style='color:#0d2880'>**20min**</span> headlines")
 
+ggsave(here("figures", "headline_length_dist.png"), headline_length_dist, width = 10, height = 6)
+
+headline_length_dist
 ```
 
 
@@ -157,7 +168,8 @@ word_frequencies <-
 
 pos <- position_jitter(width = 0.03, height = 0.03, seed = 1)
 
-word_frequencies %>%
+word_frequencies_plot <-
+  word_frequencies %>%
   filter(`20min` != 0,
          nzz != 0) %>%
   ggplot(aes(x = `20min`, y = nzz, color = proportion_differences_class)) +
@@ -168,13 +180,18 @@ word_frequencies %>%
   scale_y_log10(labels = percent_format(accuracy = 0.001), limits = c(0.00001, 0.01)) +
   scale_color_manual(values = c("#0d2880", "#A40E4C", "gray83")) +
   scale_fill_manual(values = c("#0d2880", "#A40E4C")) +
-  theme_minimal() +
+  theme_minimal(base_family = "Source Sans Pro",
+                base_size = 16) +
   theme(legend.position = "none",
         plot.title.position = "plot",
         plot.title = element_markdown(),
         plot.subtitle = element_markdown()) +
   labs(title = "**Proportion differences**",
        subtitle = "reveal words which are more prevalent in <span style='color:#A40E4C'>**nzz**</span> or <span style='color:#0d2880'>**20min**</span> headlines")
+
+ggsave(here("figures", "word_frequencies.png"), word_frequencies_plot, width = 10, height = 6)
+
+word_frequencies_plot
 ```
 
 
