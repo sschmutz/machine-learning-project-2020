@@ -22,6 +22,10 @@ update_geom_defaults("label_repel", list(family = "Source Sans Pro", size = 6))
 ```{r read_results, message=FALSE, warning=FALSE}
 
 cv_accuracies <-
+  read_csv(here("submission", "results", "cross_validation_accuracies.csv")) %>%
+  mutate(set_type = if_else(set_type == "test", "evaluate", set_type))
+
+cv_accuracies_grid <-
   read_csv(here("submission", "results", "cross_validation_accuracies_grid.csv")) %>%
   mutate(set_type = if_else(set_type == "test", "evaluate", set_type))
 
@@ -30,10 +34,8 @@ cv_accuracies <-
 ```{r heatmap}
 
 grid_cv <-
-  cv_accuracies %>%
-  mutate(exclude_stop_words = if_else(exclude_stop_words, "stop words removed", "stop words included"),
-         train_headlines = round(train_headlines, digits = -2),
-         train_vocabulary = round(train_vocabulary, digits = -2)) %>%
+  cv_accuracies_grid %>%
+  mutate(exclude_stop_words = if_else(exclude_stop_words, "stop words removed", "stop words included")) %>%
   ggplot(aes(x = factor(train_headlines), y = factor(train_vocabulary))) +
   geom_tile(aes(fill = accuracy)) +
   facet_grid(set_type ~ exclude_stop_words) +
