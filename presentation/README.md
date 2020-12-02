@@ -15,6 +15,7 @@
 - Proposed model  
   - Implementation  
   - Results/Performance (overfitting observed?)  
+  - Confusion Matrix  
   - What could we do to improve?  
 
 - Conclusions, outlook, limitations and challenges  
