@@ -28,7 +28,7 @@ headlines_20min <-
 
 headlines_nzz <-
   read_csv(here("data", "headlines_nzz.csv")) %>%
-  mutate(source = "nzz")
+  mutate(source = "NZZ")
 
 # source: https://github.com/solariz/german_stopwords/blob/master/german_stopwords_plain.txt
 stop_words_german <-
@@ -37,7 +37,7 @@ stop_words_german <-
 # Combine the two datasets
 headlines <-
   bind_rows(headlines_20min, headlines_nzz) %>%
-  mutate(source = factor(source, levels = c("nzz", "20min")),
+  mutate(source = factor(source, levels = c("NZZ", "20min")),
          object = factor(str_to_title(object), levels = c("Title", "Teaser"))) 
 
 # remove replicates and split text in order to have one word per line
@@ -139,7 +139,7 @@ headline_length_dist <-
   labs(x = "Number of words",
        y = NULL, 
        title = "**Headline length distribution**",
-       subtitle = "amount of words in <span style='color:#A40E4C'>**nzz**</span> and <span style='color:#0d2880'>**20min**</span> headlines")
+       subtitle = "amount of words in <span style='color:#A40E4C'>**NZZ**</span> and <span style='color:#0d2880'>**20min**</span> headlines")
 
 ggsave(here("figures", "headline_length_dist.png"), headline_length_dist, width = 10, height = 6)
 
@@ -158,11 +158,11 @@ word_frequencies <-
   mutate(proportion = n / sum(n)) %>%
   select(-n) %>%
   pivot_wider(names_from = source, values_from = proportion, values_fill = 0) %>%
-  mutate(proportion_differences = nzz-`20min`,
+  mutate(proportion_differences = NZZ-`20min`,
          big_proportion_differences_class = if_else(abs(proportion_differences) >= 0.0009, TRUE, FALSE),
          proportion_differences_class = case_when(
            proportion_differences <= -0.0009 ~ "frequent in 20min",
-           proportion_differences >= 0.0009 ~ "frequent in nzz",
+           proportion_differences >= 0.0009 ~ "frequent in NZZ",
            TRUE ~ "no larg differences"
          ))
 
@@ -171,8 +171,8 @@ pos <- position_jitter(width = 0.03, height = 0.03, seed = 1)
 word_frequencies_plot <-
   word_frequencies %>%
   filter(`20min` != 0,
-         nzz != 0) %>%
-  ggplot(aes(x = `20min`, y = nzz, color = proportion_differences_class)) +
+         NZZ != 0) %>%
+  ggplot(aes(x = `20min`, y = NZZ, color = proportion_differences_class)) +
   geom_abline(color = "gray40", lty = 2) +
   geom_point(alpha = 0.3, size = 2.5, position = pos) +
   geom_label_repel(data = filter(word_frequencies, big_proportion_differences_class == TRUE), aes(label = word, fill = proportion_differences_class), color = "white", segment.color = "gray50", alpha = 0.9, segment.alpha = 0.5, position = pos) +
@@ -187,7 +187,7 @@ word_frequencies_plot <-
         plot.title = element_markdown(),
         plot.subtitle = element_markdown()) +
   labs(title = "**Proportion differences**",
-       subtitle = "reveal words which are more prevalent in <span style='color:#A40E4C'>**nzz**</span> or <span style='color:#0d2880'>**20min**</span> headlines")
+       subtitle = "reveal words which are more prevalent in <span style='color:#A40E4C'>**NZZ**</span> or <span style='color:#0d2880'>**20min**</span> headlines")
 
 ggsave(here("figures", "word_frequencies.png"), word_frequencies_plot, width = 10, height = 6)
 
