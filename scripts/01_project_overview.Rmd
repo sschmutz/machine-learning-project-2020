@@ -90,12 +90,12 @@ n_unique %>%
 
 
 ### Objective
-Can we predict the source of a title or teaser based on the chosen words?  
-We might want to try title or teaser separately, or a combination and compare the performances.
+Can we predict the source of a news headline based on the chosen words?  
+We might want to try with or without stop words removal, different vocabulary sizes and compare the performances using k-fold cross-validation.
 
 
 ### Data visualisation
-To gain some insights, basic data visualisation was done on the dataset where replicates (stories listed multiple times) were only kept once.  
+To gain some insights, basic data visualization was done on the dataset where replicates (stories listed multiple times) were only kept once.  
 Figure \ref{fig:headline-length} shows the headline length (words) distributions within the different categories. It can be seen that nzz headlines are typically a bit longer and with a larger spread compared to 20min headlines.  
 Figure \ref{fig:word-frequencies} compares the word frequencies from the two sources. Stop words, words that are very common and typically not very useful for classification were removed (source: [github.com/solariz/german_stopwords](https://github.com/solariz/german_stopwords/blob/master/german_stopwords_plain.txt)).  
 It's visible that many of the most frequently used words occur at different rates in headlines of the two news-sites. This could hint that it's possible to classify headlines based on the words used.
@@ -141,7 +141,7 @@ headline_length_dist <-
        title = "**Headline length distribution**",
        subtitle = "amount of words in <span style='color:#A40E4C'>**NZZ**</span> and <span style='color:#0d2880'>**20min**</span> headlines")
 
-ggsave(here("figures", "headline_length_dist.png"), headline_length_dist, width = 10, height = 6)
+#ggsave(here("figures", "headline_length_dist.png"), headline_length_dist, width = 10, height = 6)
 
 headline_length_dist
 ```
@@ -189,7 +189,7 @@ word_frequencies_plot <-
   labs(title = "**Proportion differences**",
        subtitle = "reveal words which are more prevalent in <span style='color:#A40E4C'>**NZZ**</span> or <span style='color:#0d2880'>**20min**</span> headlines")
 
-ggsave(here("figures", "word_frequencies.png"), word_frequencies_plot, width = 10, height = 6)
+#ggsave(here("figures", "word_frequencies.png"), word_frequencies_plot, width = 10, height = 6)
 
 word_frequencies_plot
 ```
@@ -202,7 +202,7 @@ For the 20min dataset we have a teaser for almost every title, this is not the c
 
 
 ## Chosen Estimator
-Following the flow diagram below (see Figure \ref{fig:ml-map}), we might want to try a Linear Support Vector Classification or Naive Bayes.  
+Following the flow diagram below (see Figure \ref{fig:ml-map}), we might want to try Naive Bayes or Linear Support Vector Classification.  
 
 ```{r ml-map, fig.cap="Choosing the right ML estimator, source: scikit-learn.org", echo=FALSE, out.width="400px", fig.align="center"}
 knitr::include_graphics(here("figures", "ml_map.png"))
