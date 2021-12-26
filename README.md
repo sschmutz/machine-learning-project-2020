@@ -4,8 +4,8 @@
 ## Tasks and deadlines
 - [x] Team choice: 13 November 2020
 - [x] Dataset choice: 25 November 2020
-- [ ] Presentation: 16 December 2020
-- [ ] Written report and `MATLAB` code: before 18 January 2021
+- [x] Presentation: 16 December 2020
+- [x] Written report and `MATLAB` code: before 18 January 2021
 
 ## Evaluation criteria
 - Motivation and problem understanding  
